@@ -1,0 +1,48 @@
+'use strict'
+
+module.exports = {
+    parserOptions: {
+        ecmaVersion: 2019,
+        sourceType: 'script',
+    },
+
+    extends: [
+        require.resolve('eslint-config-airbnb-base'),
+    ],
+
+    globals: {
+        chrome: false,
+        window: false,
+    },
+
+    rules: {
+        // 5.1 https://github.com/airbnb/javascript#destructuring--object
+        'prefer-destructuring': ['warn'],
+
+        // (?) 14.4 https://github.com/airbnb/javascript#hoisting--declarations
+        // Present in `eslint-config-airbnb-base` but not in the README
+        'no-use-before-define': ['error', {
+            functions: false,
+            classes: true,
+            variables: true,
+        }],
+
+        // 16.2 https://github.com/airbnb/javascript#blocks--cuddled-elses
+        'brace-style': ['error', 'stroustrup'],
+
+        // 19.1 https://github.com/airbnb/javascript#whitespace--spaces
+        indent: ['error', 4, {
+            SwitchCase: 1,
+        }],
+
+        // 19.19 https://github.com/airbnb/javascript#whitespace--no-multiple-empty-lines
+        'no-multiple-empty-lines': ['error', {
+            max: 3,
+            maxBOF: 0,
+            maxEOF: 0,
+        }],
+
+        // 21.1 https://github.com/airbnb/javascript#semicolons--required
+        semi: ['error', 'never'],
+    },
+}

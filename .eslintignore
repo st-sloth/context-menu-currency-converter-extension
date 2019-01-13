@@ -1,0 +1,2 @@
+# Lint all .js files (as in including `.eslintrc.js`)
+!*.js
