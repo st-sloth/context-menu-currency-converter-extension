@@ -22,6 +22,14 @@ module.exports = {
         // 6.3 https://github.com/airbnb/javascript#es6-template-literals
         'prefer-template': ['off'],
 
+        // 13.7 https://github.com/airbnb/javascript#variables--linebreak
+        'operator-linebreak': ['error', 'after', {
+            overrides: {
+                '?': 'before',
+                ':': 'before',
+            },
+        }],
+
         // (?) 14.4 https://github.com/airbnb/javascript#hoisting--declarations
         // Present in `eslint-config-airbnb-base` but not in the README
         'no-use-before-define': ['error', {

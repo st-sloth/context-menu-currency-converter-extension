@@ -7,11 +7,11 @@ const MENU_ITEM_ID_ROOT = 'root'
 const MENU_ITEM_ID_COPY = 'copy'
 const MENU_ITEM_ID_OPTIONS = 'options'
 
-// TODO
+// TODO Better default? (even tho menu item is hidden when this title is used)
 const MENU_ITEM_ROOT_DEFAULT_TITLE = '...'
 
 const STORAGE_KEY_LAST_SELECTION = 'last_selection'
-const STORAGE_KEY_LAST_CONVERTED_VALUE = 'last_converted_value'
+const STORAGE_KEY_LAST_CONVERTED_TEXT = 'last_converted_text'
 
 
 
@@ -49,7 +49,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     }
     else if (info.menuItemId === MENU_ITEM_ID_COPY) {
         copyToClipboard(
-            window.localStorage.getItem(STORAGE_KEY_LAST_CONVERTED_VALUE),
+            window.localStorage.getItem(STORAGE_KEY_LAST_CONVERTED_TEXT),
         )
     }
 })
@@ -67,37 +67,63 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
 
 
 /**
- * @param {string} text
+ * @param {string} sourceText
  */
-function handleSelectionChange(text) {
-    let convertedValue = ''
-    let newTitle = MENU_ITEM_ROOT_DEFAULT_TITLE
+function handleSelectionChange(sourceText) {
+    let convertedText = ''
+    let newContextMenuItemTitle = MENU_ITEM_ROOT_DEFAULT_TITLE
 
-    if (text) {
-        const numericMatch = text.match(
-            /(?<integral>\d{1,3}([ ,.]?\d{3})*)([,.](?<fractional>\d{0,2}))?/,
+    if (sourceText) {
+        // Find number with different thousand and decimal separators.
+        // `(?!\d)` is needed to make regexp process all digits until a non-digit;
+        // otherwise, in "87654321", only "876543" would match.
+        // Also, allowing space as decimal separator to handle Amazon-like prices,
+        // where fractional part is in another element
+        // positioned as a superscript or a subscript.
+        const sourceNumericMatch = sourceText.match(
+            /(?<integral>\d{1,3}([ ,.]?\d{3})*(?!\d))([ ,.](?<fractional>\d{0,2}))?/,
         )
 
-        if (numericMatch) {
-            const integralPart = numericMatch.groups.integral
+        if (sourceNumericMatch) {
+            const integralPart = sourceNumericMatch.groups.integral
                 .replace(/\D/g, '')
-            const fractionalPart = numericMatch.groups.fractional || ''
+            const fractionalPart = sourceNumericMatch.groups.fractional || ''
 
-            const number = parseFloat(integralPart + '.' + fractionalPart)
+            const sourceNumericText = sourceNumericMatch[0]
+            const sourceNumericValue = parseFloat(integralPart + '.' + fractionalPart)
 
-            // todo normalize format
-            convertedValue = String(number)
+            // Find currency
+            const sourceNumericTextEscaped = sourceNumericText.replace(/[.]/g, '\\$&')
+            const currencyFinderRe = new RegExp(
+                `((?<leftWord>\\S+)\\s*)?${sourceNumericTextEscaped}(\\s*(?<rightWord>\\S+))?`,
+            )
+            const sourceCurrencyMatch = sourceText.match(currencyFinderRe)
 
-            newTitle = `${text} → ${convertedValue}`
+            // TODO Handle only valid currencies from a list
+            const sourceCurrency = (
+                sourceCurrencyMatch.groups.rightWord ||
+                sourceCurrencyMatch.groups.leftWord
+            )
+
+            if (sourceCurrency) {
+                // TODO Convert value to selected currency
+                convertedText = 'TODO'
+
+                newContextMenuItemTitle = (
+                    formatCurrency(sourceNumericValue, sourceCurrency) +
+                    ' → ' +
+                    convertedText
+                )
+            }
         }
     }
 
-    window.localStorage.setItem(STORAGE_KEY_LAST_SELECTION, text)
-    window.localStorage.setItem(STORAGE_KEY_LAST_CONVERTED_VALUE, convertedValue)
+    window.localStorage.setItem(STORAGE_KEY_LAST_SELECTION, sourceText)
+    window.localStorage.setItem(STORAGE_KEY_LAST_CONVERTED_TEXT, convertedText)
 
     chrome.contextMenus.update(MENU_ITEM_ID_ROOT, {
-        title: newTitle,
-        visible: !!convertedValue,
+        title: newContextMenuItemTitle,
+        visible: !!convertedText,
     })
 }
 
@@ -115,4 +141,26 @@ function copyToClipboard(text) {
     proxyEl.select()
     document.execCommand('Copy', false, null)
     document.body.removeChild(proxyEl)
+}
+
+
+
+/**
+ * @param {number} value
+ * @param {string} currency
+ * @return {string}
+ */
+function formatCurrency(value, currency) {
+    let valueString = value.toFixed(2)
+
+    // Add thousand space separators after each digit
+    // followed by one or more groups of three digits
+    // until the decimal point.
+    // With a function replacer for debugging with breakpoints.
+    // eslint-disable-next-line arrow-body-style
+    valueString = valueString.replace(/\d(?=((\d{3})+)\.)/g, (substr) => {
+        return substr + ' '
+    })
+
+    return valueString + ' ' + currency
 }
