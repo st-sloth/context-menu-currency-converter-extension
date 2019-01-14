@@ -19,6 +19,9 @@ module.exports = {
         // 5.1 https://github.com/airbnb/javascript#destructuring--object
         'prefer-destructuring': ['warn'],
 
+        // 6.3 https://github.com/airbnb/javascript#es6-template-literals
+        'prefer-template': ['off'],
+
         // (?) 14.4 https://github.com/airbnb/javascript#hoisting--declarations
         // Present in `eslint-config-airbnb-base` but not in the README
         'no-use-before-define': ['error', {

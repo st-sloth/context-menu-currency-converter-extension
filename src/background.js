@@ -21,6 +21,7 @@ chrome.runtime.onInstalled.addListener(() => {
         id: MENU_ITEM_ID_ROOT,
         title: MENU_ITEM_ROOT_DEFAULT_TITLE,
         contexts: CONTEXTS,
+        visible: false,
     })
     chrome.contextMenus.create({
         parentId: MENU_ITEM_ID_ROOT,
@@ -65,24 +66,47 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
 
 
 
+/**
+ * @param {string} text
+ */
 function handleSelectionChange(text) {
-    // TODO
-    const convertedValue = String.prototype.toUpperCase.apply(text)
-    const newTitle = text
-        ? `${text} → ${convertedValue}`
-        : MENU_ITEM_ROOT_DEFAULT_TITLE
+    let convertedValue = ''
+    let newTitle = MENU_ITEM_ROOT_DEFAULT_TITLE
+
+    if (text) {
+        const numericMatch = text.match(
+            /(?<integral>\d{1,3}([ ,.]?\d{3})*)([,.](?<fractional>\d{0,2}))?/,
+        )
+
+        if (numericMatch) {
+            const integralPart = numericMatch.groups.integral
+                .replace(/\D/g, '')
+            const fractionalPart = numericMatch.groups.fractional || ''
+
+            const number = parseFloat(integralPart + '.' + fractionalPart)
+
+            // todo normalize format
+            convertedValue = String(number)
+
+            newTitle = `${text} → ${convertedValue}`
+        }
+    }
 
     window.localStorage.setItem(STORAGE_KEY_LAST_SELECTION, text)
     window.localStorage.setItem(STORAGE_KEY_LAST_CONVERTED_VALUE, convertedValue)
 
     chrome.contextMenus.update(MENU_ITEM_ID_ROOT, {
         title: newTitle,
+        visible: !!convertedValue,
     })
 }
 
 
 
-// https://stackoverflow.com/a/18455088/3187607
+/**
+ * https://stackoverflow.com/a/18455088/3187607
+ * @param {string} text
+ */
 function copyToClipboard(text) {
     const document = window.document
     const proxyEl = document.createElement('textarea')
