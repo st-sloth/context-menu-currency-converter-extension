@@ -3,7 +3,7 @@
 module.exports = {
     parserOptions: {
         ecmaVersion: 2019,
-        sourceType: 'script',
+        sourceType: 'module',
     },
 
     extends: [
@@ -55,16 +55,21 @@ module.exports = {
 
         // 21.1 https://github.com/airbnb/javascript#semicolons--required
         semi: ['error', 'never'],
+
+
+
+        // ES modules in browsers are resolved with extensions
+        'import/extensions': ['error', 'always'],
     },
 
     overrides: [
         {
             files: [
-                'src/background.js',
-                'src/currency-aliases.js',
+                '.eslintrc.js',
+                'src/content-selection-watcher.js',
             ],
             parserOptions: {
-                sourceType: 'module',
+                sourceType: 'script',
             },
         },
     ],

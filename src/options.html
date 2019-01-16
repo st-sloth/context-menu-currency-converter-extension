@@ -5,11 +5,44 @@
 
     <style>
         body {
-            background-color: orange;
+        }
+
+        .field {
+            display: block;
+            font-size: 1rem;
+        }
+        .field + .field {
+            margin-top: 0.8rem;
+        }
+
+        .field__label {
+        }
+
+        .field__value {
+            margin-left: 10px;
         }
     </style>
 </head>
 <body>
-    <script src="options.js"></script>
+    <label class="field">
+        <span class="field__label">Last refresh:</span>
+        <span
+            class="field__value"
+            id="lastRefreshValue"
+        >
+            Never
+        </span>
+    </label>
+
+    <label class="field">
+        <span class="field__label">Currency to convert to:</span>
+        <select
+            class="field__value"
+            id="selectedCurrencyValue"
+        >
+        </select>
+    </label>
+
+    <script type="module" src="options.js"></script>
 </body>
 </html>

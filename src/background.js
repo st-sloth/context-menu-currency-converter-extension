@@ -1,5 +1,19 @@
-// eslint-disable-next-line import/extensions
+import {
+    store,
+    retrieve,
+    copyToClipboard,
+} from './utils.js'
 import CURRENCY_ALIASES from './currency-aliases.js'
+import {
+    STORAGE_KEY_CURRENCY_RATES_BY_USD,
+    STORAGE_KEY_SELECTED_CURRENCY,
+    STORAGE_KEY_LAST_REFRESH_TIME,
+    STORAGE_KEY_LAST_SELECTION,
+    STORAGE_KEY_LAST_CONVERTED_TEXT,
+    STORAGE_DEFAULTS,
+    CURRENCY_RATES_SOURCE,
+    CURRENCY_RATES_REFRESH_INTERVAL,
+} from './config.js'
 
 
 const CONTEXTS = ['selection']
@@ -8,11 +22,16 @@ const MENU_ITEM_ID_ROOT = 'root'
 const MENU_ITEM_ID_COPY = 'copy'
 const MENU_ITEM_ID_OPTIONS = 'options'
 
-// TODO Better default? (even tho menu item is hidden when this title is used)
-const MENU_ITEM_ROOT_DEFAULT_TITLE = '...'
+const MENU_ITEM_ROOT_DEFAULT_TITLE = '<If you see this, something broke>'
 
-const STORAGE_KEY_LAST_SELECTION = 'last_selection'
-const STORAGE_KEY_LAST_CONVERTED_TEXT = 'last_converted_text'
+
+
+// Ensure storage defaults
+Object.keys(STORAGE_DEFAULTS).forEach((key) => {
+    if (!retrieve(key)) {
+        store(key, STORAGE_DEFAULTS[key])
+    }
+})
 
 
 
@@ -50,7 +69,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     }
     else if (info.menuItemId === MENU_ITEM_ID_COPY) {
         copyToClipboard(
-            window.localStorage.getItem(STORAGE_KEY_LAST_CONVERTED_TEXT),
+            retrieve(STORAGE_KEY_LAST_CONVERTED_TEXT),
         )
     }
 })
@@ -64,6 +83,11 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
         handleSelectionChange(message.value)
     }
 })
+
+
+
+// Check and refresh stored rates at event page waking
+refreshRates()
 
 
 
@@ -100,14 +124,31 @@ function handleSelectionChange(sourceText) {
             )
             const sourceCurrencyMatch = sourceText.match(currencyFinderRe)
 
+            const currencyRates = retrieve(STORAGE_KEY_CURRENCY_RATES_BY_USD)
+
+            // TODO test both words in `getCurrencyCode`
+            //      rather than selecting by truthiness
             const sourceCurrencyCode = getCurrencyCode(
-                sourceCurrencyMatch.groups.rightWord ||
-                sourceCurrencyMatch.groups.leftWord,
+                (
+                    sourceCurrencyMatch.groups.rightWord ||
+                    sourceCurrencyMatch.groups.leftWord
+                ),
+                currencyRates,
             )
 
             if (sourceCurrencyCode) {
-                // TODO Convert value to selected currency
-                convertedText = 'TODO'
+                const targetCurrencyCode = retrieve(STORAGE_KEY_SELECTED_CURRENCY)
+
+                // TODO Adapt structure to be less API type dependent
+                const intermediateUsdValue = (
+                    sourceNumericValue * currencyRates[sourceCurrencyCode.toLowerCase()].inverseRate
+                )
+
+                const targetNumericValue = (
+                    intermediateUsdValue * currencyRates[targetCurrencyCode.toLowerCase()].rate
+                )
+
+                convertedText = formatCurrency(targetNumericValue, targetCurrencyCode)
 
                 newContextMenuItemTitle = (
                     formatCurrency(sourceNumericValue, sourceCurrencyCode) +
@@ -118,29 +159,13 @@ function handleSelectionChange(sourceText) {
         }
     }
 
-    window.localStorage.setItem(STORAGE_KEY_LAST_SELECTION, sourceText)
-    window.localStorage.setItem(STORAGE_KEY_LAST_CONVERTED_TEXT, convertedText)
+    store(STORAGE_KEY_LAST_SELECTION, sourceText)
+    store(STORAGE_KEY_LAST_CONVERTED_TEXT, convertedText)
 
     chrome.contextMenus.update(MENU_ITEM_ID_ROOT, {
         title: newContextMenuItemTitle,
         visible: !!convertedText,
     })
-}
-
-
-
-/**
- * https://stackoverflow.com/a/18455088/3187607
- * @param {string} text
- */
-function copyToClipboard(text) {
-    const document = window.document
-    const proxyEl = document.createElement('textarea')
-    proxyEl.textContent = text
-    document.body.appendChild(proxyEl)
-    proxyEl.select()
-    document.execCommand('Copy', false, null)
-    document.body.removeChild(proxyEl)
 }
 
 
@@ -172,24 +197,64 @@ function formatCurrency(value, currency) {
  * If the input text cannot be cast to a currency code, `null` is returned.
  *
  * @param {string} text
+ * @param {Object} currencyRates
  * @return {string | null}
  */
-function getCurrencyCode(text) {
+function getCurrencyCode(text, currencyRates) {
     /** @type {string | null} */
     let code = null
 
     if (text in CURRENCY_ALIASES) {
         code = CURRENCY_ALIASES[text]
     }
-    // TODO Handle only valid currencies from a list
-    // eslint-disable-next-line no-constant-condition
-    else if (true) {
+    else {
         code = text
     }
 
-    if (code) {
-        code = code.toUpperCase()
+    // Handle only valid currencies
+    // TODO Adapt structure to be less API type dependent
+    if (
+        code &&
+        currencyRates &&
+        (code.toLowerCase() in currencyRates)
+    ) {
+        return code.toUpperCase()
     }
 
-    return code
+    return null
+}
+
+
+
+async function refreshRates() {
+    const nowTime = (new Date()).getTime()
+    const lastRefreshTime = retrieve(STORAGE_KEY_LAST_REFRESH_TIME)
+
+    if (
+        !lastRefreshTime ||
+        nowTime > lastRefreshTime + CURRENCY_RATES_REFRESH_INTERVAL
+    ) {
+        const response = await window.fetch(CURRENCY_RATES_SOURCE)
+        let data = await response.json()
+
+        // TODO Get rid of this hack for full currency list
+        //      (the API for rates relative to USD doesn't include USD itself).
+        //      New object with spreading so USD is first in the key iteration.
+        if (!('usd' in data)) {
+            data = {
+                usd: {
+                    code: 'USD',
+                    alphaCode: 'USD',
+                    numericCode: '840',
+                    name: 'U.S. Dollar',
+                    rate: 1,
+                    inverseRate: 1,
+                },
+                ...data,
+            }
+        }
+
+        store(STORAGE_KEY_CURRENCY_RATES_BY_USD, data)
+        store(STORAGE_KEY_LAST_REFRESH_TIME, nowTime)
+    }
 }
