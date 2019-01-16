@@ -56,4 +56,16 @@ module.exports = {
         // 21.1 https://github.com/airbnb/javascript#semicolons--required
         semi: ['error', 'never'],
     },
+
+    overrides: [
+        {
+            files: [
+                'src/background.js',
+                'src/currency-aliases.js',
+            ],
+            parserOptions: {
+                sourceType: 'module',
+            },
+        },
+    ],
 }

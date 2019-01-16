@@ -1,4 +1,5 @@
-'use strict'
+// eslint-disable-next-line import/extensions
+import CURRENCY_ALIASES from './currency-aliases.js'
 
 
 const CONTEXTS = ['selection']
@@ -99,18 +100,17 @@ function handleSelectionChange(sourceText) {
             )
             const sourceCurrencyMatch = sourceText.match(currencyFinderRe)
 
-            // TODO Handle only valid currencies from a list
-            const sourceCurrency = (
+            const sourceCurrencyCode = getCurrencyCode(
                 sourceCurrencyMatch.groups.rightWord ||
-                sourceCurrencyMatch.groups.leftWord
+                sourceCurrencyMatch.groups.leftWord,
             )
 
-            if (sourceCurrency) {
+            if (sourceCurrencyCode) {
                 // TODO Convert value to selected currency
                 convertedText = 'TODO'
 
                 newContextMenuItemTitle = (
-                    formatCurrency(sourceNumericValue, sourceCurrency) +
+                    formatCurrency(sourceNumericValue, sourceCurrencyCode) +
                     ' → ' +
                     convertedText
                 )
@@ -163,4 +163,33 @@ function formatCurrency(value, currency) {
     })
 
     return valueString + ' ' + currency
+}
+
+
+
+/**
+ * Get currency code in upper case, like 'EUR', 'USD', etc.
+ * If the input text cannot be cast to a currency code, `null` is returned.
+ *
+ * @param {string} text
+ * @return {string | null}
+ */
+function getCurrencyCode(text) {
+    /** @type {string | null} */
+    let code = null
+
+    if (text in CURRENCY_ALIASES) {
+        code = CURRENCY_ALIASES[text]
+    }
+    // TODO Handle only valid currencies from a list
+    // eslint-disable-next-line no-constant-condition
+    else if (true) {
+        code = text
+    }
+
+    if (code) {
+        code = code.toUpperCase()
+    }
+
+    return code
 }
