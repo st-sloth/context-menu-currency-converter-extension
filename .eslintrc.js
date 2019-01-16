@@ -66,6 +66,7 @@ module.exports = {
         {
             files: [
                 '.eslintrc.js',
+                'scripts/**',
                 'src/content-selection-watcher.js',
             ],
             parserOptions: {

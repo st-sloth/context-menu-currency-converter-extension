@@ -5,11 +5,13 @@
   "private": true,
   "license": "MIT",
   "scripts": {
+    "bundle": "node scripts/bundle.js",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx,.vue --format node_modules/eslint-friendly-formatter ./",
     "lint:fix": "eslint --fix --ext .js,.jsx,.ts,.tsx,.vue --format node_modules/eslint-friendly-formatter ./"
   },
   "dependencies": {},
   "devDependencies": {
+    "archiver": "^3.0.0",
     "eslint": "^5.12.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-friendly-formatter": "^4.0.1",

@@ -1,1 +1,5 @@
 node_modules/
+
+# Just keep `dist` dir, without having to `mkdirp`
+dist/
+!dist/.gitkeep
