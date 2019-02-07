@@ -31,3 +31,20 @@ export function copyToClipboard(text) {
     document.execCommand('Copy', false, null)
     document.body.removeChild(proxyEl)
 }
+
+
+
+/**
+ * Taken from
+ * https://stackoverflow.com/a/6969486/3187607
+ * or maybe
+ * https://github.com/sindresorhus/escape-string-regexp/blob/master/index.js
+ * is the source
+ *
+ * @param {string} string
+ * @return {string}
+ */
+export function escapeRegExp(string) {
+    // $& means the whole matched string
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}

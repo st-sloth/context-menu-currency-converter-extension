@@ -2,6 +2,7 @@ import {
     store,
     retrieve,
     copyToClipboard,
+    escapeRegExp,
 } from './utils.js'
 import CURRENCY_ALIASES from './currency-aliases.js'
 import {
@@ -118,7 +119,7 @@ function handleSelectionChange(sourceText) {
             const sourceNumericValue = parseFloat(integralPart + '.' + fractionalPart)
 
             // Find currency
-            const sourceNumericTextEscaped = sourceNumericText.replace(/[.]/g, '\\$&')
+            const sourceNumericTextEscaped = escapeRegExp(sourceNumericText)
             const currencyFinderRe = new RegExp(
                 `((?<leftWord>\\S+)\\s*)?${sourceNumericTextEscaped}(\\s*(?<rightWord>\\S+))?`,
             )
@@ -126,13 +127,11 @@ function handleSelectionChange(sourceText) {
 
             const currencyRates = retrieve(STORAGE_KEY_CURRENCY_RATES_BY_USD)
 
-            // TODO test both words in `getCurrencyCode`
-            //      rather than selecting by truthiness
-            const sourceCurrencyCode = getCurrencyCode(
-                (
-                    sourceCurrencyMatch.groups.rightWord ||
-                    sourceCurrencyMatch.groups.leftWord
-                ),
+            const sourceCurrencyCode = getFirstCurrencyCode(
+                [
+                    sourceCurrencyMatch.groups.rightWord,
+                    sourceCurrencyMatch.groups.leftWord,
+                ],
                 currencyRates,
             )
 
@@ -193,35 +192,33 @@ function formatCurrency(value, currency) {
 
 
 /**
- * Get currency code in upper case, like 'EUR', 'USD', etc.
- * If the input text cannot be cast to a currency code, `null` is returned.
+ * Get first currency code in upper case, like 'EUR', 'USD', etc.
+ * If none of the input texts can be cast to a currency code,
+ * empty string is returned.
  *
- * @param {string} text
+ * @param {Array<string>} texts
  * @param {Object} currencyRates
- * @return {string | null}
+ * @return {string}
  */
-function getCurrencyCode(text, currencyRates) {
-    /** @type {string | null} */
-    let code = null
+function getFirstCurrencyCode(texts, currencyRates) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const text of texts) {
+        const code = text in CURRENCY_ALIASES
+            ? CURRENCY_ALIASES[text]
+            : text
 
-    if (text in CURRENCY_ALIASES) {
-        code = CURRENCY_ALIASES[text]
-    }
-    else {
-        code = text
-    }
-
-    // Handle only valid currencies
-    // TODO Adapt structure to be less API type dependent
-    if (
-        code &&
-        currencyRates &&
-        (code.toLowerCase() in currencyRates)
-    ) {
-        return code.toUpperCase()
+        // Handle only valid currencies
+        // TODO Adapt structure to be less API type dependent
+        if (
+            code &&
+            currencyRates &&
+            (code.toLowerCase() in currencyRates)
+        ) {
+            return code.toUpperCase()
+        }
     }
 
-    return null
+    return ''
 }
 
 
