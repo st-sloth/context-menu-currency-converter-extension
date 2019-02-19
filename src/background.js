@@ -120,8 +120,9 @@ function handleSelectionChange(sourceText) {
 
             // Find currency
             const sourceNumericTextEscaped = escapeRegExp(sourceNumericText)
+            const applicableWordChars = '[^\\s0-9.,;:!?=+\\-*/\\\\<>(){}[\\]\'"`~@%\\^&]'
             const currencyFinderRe = new RegExp(
-                `((?<leftWord>\\S+)\\s*)?${sourceNumericTextEscaped}(\\s*(?<rightWord>\\S+))?`,
+                `((?<leftWord>${applicableWordChars}+)\\s*)?${sourceNumericTextEscaped}(\\s*(?<rightWord>${applicableWordChars}+))?`,
             )
             const sourceCurrencyMatch = sourceText.match(currencyFinderRe)
 
