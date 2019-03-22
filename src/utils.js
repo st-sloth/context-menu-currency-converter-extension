@@ -23,6 +23,7 @@ export function retrieve(key) {
  * @param {string} text
  */
 export function copyToClipboard(text) {
+    // eslint-disable-next-line prefer-destructuring
     const document = window.document
     const proxyEl = document.createElement('textarea')
     proxyEl.textContent = text

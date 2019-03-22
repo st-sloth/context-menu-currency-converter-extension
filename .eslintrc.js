@@ -8,6 +8,7 @@ module.exports = {
 
     extends: [
         require.resolve('eslint-config-airbnb-base'),
+        'plugin:ava/recommended',
     ],
 
     globals: {
@@ -55,14 +56,18 @@ module.exports = {
 
         // 21.1 https://github.com/airbnb/javascript#semicolons--required
         semi: ['error', 'never'],
-
-
-
-        // ES modules in browsers are resolved with extensions
-        'import/extensions': ['error', 'always'],
     },
 
     overrides: [
+        {
+            files: [
+                'src/**',
+            ],
+            rules: {
+                // ES modules in browsers are resolved with extensions
+                'import/extensions': ['error', 'always'],
+            },
+        },
         {
             files: [
                 '.eslintrc.js',

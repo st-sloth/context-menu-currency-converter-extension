@@ -10,6 +10,7 @@ const packageJson = require('../package.json')
 
 
 
+// eslint-disable-next-line prefer-destructuring
 const version = packageJson.version
 
 const output = fs.createWriteStream(path.join(__dirname, '..', 'dist', version + '.zip'))

@@ -8,6 +8,7 @@ import {
 
 
 window.document.addEventListener('DOMContentLoaded', () => {
+    // eslint-disable-next-line prefer-destructuring
     const document = window.document
 
     const currencyRates = retrieve(STORAGE_KEY_CURRENCY_RATES_BY_USD)
