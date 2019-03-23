@@ -2,8 +2,7 @@ import {
     STORAGE_KEY_CURRENCY_RATES_BY_USD,
     STORAGE_KEY_SELECTED_CURRENCY,
     STORAGE_KEY_LAST_REFRESH_TIME,
-    STORAGE_KEY_LAST_SELECTION,
-    STORAGE_KEY_LAST_CONVERTED_TEXT,
+    STORAGE_KEY_LAST_CONVERSION_RESULTS,
     STORAGE_DEFAULTS,
     CURRENCY_RATES_REFRESH_INTERVAL,
 } from './config.js'
@@ -17,14 +16,14 @@ import {
     prepareCurrencyRates,
     findPossibleCurrencyData,
     getCurrencyCodes,
-    formatCurrency,
+    convertCurrencies,
 } from './utils-currency.js'
 
 
 const CONTEXTS = ['selection']
 
 const MENU_ITEM_ID_ROOT = 'root'
-const MENU_ITEM_ID_COPY = 'copy'
+const MENU_ITEM_ID_OPTIONS_SEPARATOR = 'options_separator'
 const MENU_ITEM_ID_OPTIONS = 'options'
 
 const MENU_ITEM_ROOT_DEFAULT_TITLE = '<If you see this, something broke>'
@@ -40,26 +39,9 @@ Object.keys(STORAGE_DEFAULTS).forEach((key) => {
 
 
 
-// Set up context menu tree at install time.
+// No need to set up context menu tree at install time (anymore).
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.contextMenus.create({
-        id: MENU_ITEM_ID_ROOT,
-        title: MENU_ITEM_ROOT_DEFAULT_TITLE,
-        contexts: CONTEXTS,
-        visible: false,
-    })
-    chrome.contextMenus.create({
-        parentId: MENU_ITEM_ID_ROOT,
-        id: MENU_ITEM_ID_COPY,
-        title: 'Copy',
-        contexts: CONTEXTS,
-    })
-    chrome.contextMenus.create({
-        parentId: MENU_ITEM_ID_ROOT,
-        id: MENU_ITEM_ID_OPTIONS,
-        title: 'Options...',
-        contexts: CONTEXTS,
-    })
+
 })
 
 
@@ -72,10 +54,17 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === MENU_ITEM_ID_OPTIONS) {
         chrome.runtime.openOptionsPage()
     }
-    else if (info.menuItemId === MENU_ITEM_ID_COPY) {
-        copyToClipboard(
-            retrieve(STORAGE_KEY_LAST_CONVERTED_TEXT),
+    else {
+        /** @type {Array<ConversionResult>} */
+        const conversionResults = retrieve(STORAGE_KEY_LAST_CONVERSION_RESULTS)
+
+        const clickedConversionResult = conversionResults.find(
+            res => res.title === info.menuItemId,
         )
+
+        if (clickedConversionResult) {
+            copyToClipboard(clickedConversionResult.conversionResultText)
+        }
     }
 })
 
@@ -100,13 +89,13 @@ refreshRates()
  * @param {string} sourceText
  */
 function handleSelectionChange(sourceText) {
-    let convertedText = ''
-    let newContextMenuItemTitle = MENU_ITEM_ROOT_DEFAULT_TITLE
+    let conversionResults = []
 
     const sourceData = findPossibleCurrencyData(sourceText)
 
     if (sourceData) {
         const currencyRates = retrieve(STORAGE_KEY_CURRENCY_RATES_BY_USD)
+        const targetCurrencyCode = retrieve(STORAGE_KEY_SELECTED_CURRENCY)
 
         const sourceCurrencyCodes = getCurrencyCodes(
             [
@@ -116,36 +105,64 @@ function handleSelectionChange(sourceText) {
             currencyRates,
         )
 
-        // TODO handle all found currency codes
-        const sourceCurrencyCode = sourceCurrencyCodes[0]
+        conversionResults = convertCurrencies(
+            sourceData.number,
+            sourceCurrencyCodes,
+            targetCurrencyCode,
+            currencyRates,
+        )
 
-        if (sourceCurrencyCodes) {
-            const targetCurrencyCode = retrieve(STORAGE_KEY_SELECTED_CURRENCY)
-
-            const intermediateUsdValue = (
-                sourceData.number * currencyRates[sourceCurrencyCode].inverseRate
-            )
-
-            const targetNumericValue = (
-                intermediateUsdValue * currencyRates[targetCurrencyCode].rate
-            )
-
-            convertedText = formatCurrency(targetNumericValue, targetCurrencyCode)
-
-            newContextMenuItemTitle = (
-                formatCurrency(sourceData.number, sourceCurrencyCode) +
-                ' → ' +
-                convertedText
-            )
-        }
+        // Can contain `null`s after `convertCurrencies()`,
+        // filter them out
+        conversionResults.filter(v => v)
     }
 
-    store(STORAGE_KEY_LAST_SELECTION, sourceText)
-    store(STORAGE_KEY_LAST_CONVERTED_TEXT, convertedText)
+    store(STORAGE_KEY_LAST_CONVERSION_RESULTS, conversionResults)
 
-    chrome.contextMenus.update(MENU_ITEM_ID_ROOT, {
-        title: newContextMenuItemTitle,
-        visible: !!convertedText,
+    updateContextMenu(conversionResults)
+}
+
+
+
+/**
+ * @param {Array<ConversionResult>} conversionResults
+ */
+function updateContextMenu(conversionResults) {
+    // (Re-)Create context menu entries
+    chrome.contextMenus.removeAll(() => {
+        // After removal
+
+        chrome.contextMenus.create({
+            id: MENU_ITEM_ID_ROOT,
+            title: conversionResults[0]
+                ? conversionResults[0].title
+                : MENU_ITEM_ROOT_DEFAULT_TITLE,
+            contexts: CONTEXTS,
+            visible: !!conversionResults[0],
+        })
+
+        conversionResults.forEach((conversionResult) => {
+            chrome.contextMenus.create({
+                parentId: MENU_ITEM_ID_ROOT,
+                id: conversionResult.title,
+                title: conversionResult.title + ' (Copy...)',
+                contexts: CONTEXTS,
+            })
+        })
+
+        // The last items in sub-menu
+        chrome.contextMenus.create({
+            parentId: MENU_ITEM_ID_ROOT,
+            id: MENU_ITEM_ID_OPTIONS_SEPARATOR,
+            type: 'separator',
+            contexts: CONTEXTS,
+        })
+        chrome.contextMenus.create({
+            parentId: MENU_ITEM_ID_ROOT,
+            id: MENU_ITEM_ID_OPTIONS,
+            title: 'Options...',
+            contexts: CONTEXTS,
+        })
     })
 }
 

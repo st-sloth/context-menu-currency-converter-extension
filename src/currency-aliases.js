@@ -44,9 +44,9 @@ for (const currencyCode in currencyData) {
 
 
 // Custom aliases
-
 addAlias('zl', 'PLN')
 addAlias('руб', 'RUB')
+
 
 // TODO handle different letter cases
 export default aliases

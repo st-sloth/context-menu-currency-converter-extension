@@ -20,6 +20,12 @@ import { escapeRegExp } from './utils.js'
  * @typedef {Object<CurrencyRate>} CurrencyRates
  */
 
+/**
+ * @typedef {Object} ConversionResult
+ * @property {string} title
+ * @property {string} conversionResultText
+ */
+
 
 
 /**
@@ -164,4 +170,53 @@ export function formatCurrency(value, currency) {
     })
 
     return valueString + ' ' + currency
+}
+
+
+
+/**
+ * @param {number} sourceValue
+ * @param {Array<string>} sourceCurrencyCodes
+ * @param {string} targetCurrencyCode
+ * @param {CurrencyRates} currencyRates
+ * @return {Array<ConversionResult | null>}
+ */
+export function convertCurrencies(
+    sourceValue,
+    sourceCurrencyCodes,
+    targetCurrencyCode,
+    currencyRates,
+) {
+    const targetCurrencyRate = currencyRates[targetCurrencyCode]
+
+    const result = sourceCurrencyCodes.map((sourceCode) => {
+        const sourceCurrencyRate = currencyRates[sourceCode]
+
+        // If rates are unavailable for either currency
+        if (!sourceCurrencyRate || !targetCurrencyRate) {
+            return null
+        }
+
+        const intermediateUsdValue = (
+            sourceValue * sourceCurrencyRate.inverseRate
+        )
+
+        const targetValue = (
+            intermediateUsdValue * targetCurrencyRate.rate
+        )
+
+        const targetText = formatCurrency(targetValue, targetCurrencyCode)
+        const title = (
+            formatCurrency(sourceValue, sourceCode) +
+            ' → ' +
+            targetText
+        )
+
+        return {
+            title,
+            conversionResultText: targetText,
+        }
+    })
+
+    return result
 }
