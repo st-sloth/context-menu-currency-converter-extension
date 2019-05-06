@@ -35,12 +35,19 @@
     </label>
 
     <label class="field">
-        <span class="field__label">Currency to convert to:</span>
+        <span class="field__label">Target currency to convert to:</span>
         <select
             class="field__value"
-            id="selectedCurrencyValue"
+            id="targetCurrencySelect"
         >
         </select>
+    </label>
+
+    <label class="field">
+        <span class="field__label">Non-unique source currency aliases:</span>
+
+        <div id="sourceCurrencyAliasesList">
+        </div>
     </label>
 
     <script type="module" src="options.js"></script>

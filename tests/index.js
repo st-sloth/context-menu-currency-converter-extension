@@ -82,6 +82,19 @@ test('Currency codes by aliases', (t) => {
         getCurrencyCodes(['zl', 'руб'], preparedCurrencyRates),
         ['PLN', 'RUB'],
     )
+
+    // Preferred aliases codes
+    t.deepEqual(
+        getCurrencyCodes(['₨'], preparedCurrencyRates, {
+        }),
+        ['LKR', 'MUR', 'NPR', 'PKR', 'SCR'],
+    )
+    t.deepEqual(
+        getCurrencyCodes(['₨'], preparedCurrencyRates, {
+            '₨': 'NPR',
+        }),
+        ['NPR', 'LKR', 'MUR', 'PKR', 'SCR'],
+    )
 })
 
 

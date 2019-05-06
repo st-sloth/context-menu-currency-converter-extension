@@ -81,16 +81,32 @@ export function prepareCurrencyRates(currencyRates) {
  *
  * @param {Array<string>} words
  * @param {CurrencyRates} currencyRates
+ * @param {Object<string> =} preferredSourceCurrencies
  * @return {Array<string>}
  */
-export function getCurrencyCodes(words, currencyRates) {
+export function getCurrencyCodes(words, currencyRates, preferredSourceCurrencies = {}) {
     const codes = []
 
     // eslint-disable-next-line no-restricted-syntax
     for (const word of words) {
-        const potentialCodes = word in CURRENCY_ALIASES
-            ? CURRENCY_ALIASES[word]
-            : [word]
+        const potentialCodes = []
+
+        if (word in preferredSourceCurrencies) {
+            potentialCodes.push(preferredSourceCurrencies[word])
+        }
+
+        if (word in CURRENCY_ALIASES) {
+            potentialCodes.push(...(
+                CURRENCY_ALIASES[word]
+                    // Exclude already pushed preferred currency,
+                    // regardless of its existence (comparing with `undefined`)
+                    .filter(code => code !== preferredSourceCurrencies[word])
+            ))
+        }
+
+        if (potentialCodes.length === 0) {
+            potentialCodes.push(word)
+        }
 
         potentialCodes
             // Handle only valid currencies

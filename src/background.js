@@ -1,6 +1,7 @@
 import {
     STORAGE_KEY_CURRENCY_RATES_BY_USD,
-    STORAGE_KEY_SELECTED_CURRENCY,
+    STORAGE_KEY_TARGET_CURRENCY,
+    STORAGE_KEY_PREFERRED_SOURCE_CURRENCIES_BY_ALIAS,
     STORAGE_KEY_LAST_REFRESH_TIME,
     STORAGE_KEY_LAST_CONVERSION_RESULTS,
     STORAGE_DEFAULTS,
@@ -95,7 +96,8 @@ function handleSelectionChange(sourceText) {
 
     if (sourceData) {
         const currencyRates = retrieve(STORAGE_KEY_CURRENCY_RATES_BY_USD)
-        const targetCurrencyCode = retrieve(STORAGE_KEY_SELECTED_CURRENCY)
+        const targetCurrencyCode = retrieve(STORAGE_KEY_TARGET_CURRENCY)
+        const preferredSourceCurrencies = retrieve(STORAGE_KEY_PREFERRED_SOURCE_CURRENCIES_BY_ALIAS)
 
         const sourceCurrencyCodes = getCurrencyCodes(
             [
@@ -103,6 +105,7 @@ function handleSelectionChange(sourceText) {
                 sourceData.leftWord,
             ],
             currencyRates,
+            preferredSourceCurrencies,
         )
 
         conversionResults = convertCurrencies(
