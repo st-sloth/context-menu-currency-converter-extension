@@ -23,7 +23,7 @@ test('Currency aliases', (t) => {
     t.true(aliases.length > 0)
 
     aliases.forEach((alias) => {
-        t.true(CURRENCY_ALIASES[alias] instanceof Set)
+        t.true(Array.isArray(CURRENCY_ALIASES[alias]))
 
         CURRENCY_ALIASES[alias].forEach(
             code => t.regex(code, CURRENCY_CODE_REGEX),

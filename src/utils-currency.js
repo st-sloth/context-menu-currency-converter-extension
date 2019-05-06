@@ -89,7 +89,7 @@ export function getCurrencyCodes(words, currencyRates) {
     // eslint-disable-next-line no-restricted-syntax
     for (const word of words) {
         const potentialCodes = word in CURRENCY_ALIASES
-            ? [...CURRENCY_ALIASES[word].values()]
+            ? CURRENCY_ALIASES[word]
             : [word]
 
         potentialCodes

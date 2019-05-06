@@ -6,7 +6,7 @@ import currencyData from './_currency-format.js'
 
 /**
  * Keys are aliases (e.g. currency symbols), values are sets of currency codes
- * @type {Object<Set<string>>}
+ * @type {Object<Array<string>>}
  */
 const aliases = {}
 
@@ -16,10 +16,12 @@ const aliases = {}
  */
 function addAlias(alias, currencyCode) {
     if (!aliases[alias]) {
-        aliases[alias] = new Set()
+        aliases[alias] = [currencyCode]
     }
 
-    aliases[alias].add(currencyCode)
+    else if (!(aliases[alias].includes(currencyCode))) {
+        aliases[alias].push(currencyCode)
+    }
 }
 
 
