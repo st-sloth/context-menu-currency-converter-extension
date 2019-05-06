@@ -1,6 +1,6 @@
 {
   "name": "context-menu-currency-converter-extension",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Chrome extension to convert currencies via context menu of selected text",
   "private": true,
   "license": "MIT",
