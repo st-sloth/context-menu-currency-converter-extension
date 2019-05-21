@@ -135,11 +135,17 @@ function updateContextMenu(conversionResults) {
     chrome.contextMenus.removeAll(() => {
         // After removal
 
+        let rootMenuItemText = conversionResults[0]
+            ? conversionResults[0].title
+            : MENU_ITEM_ROOT_DEFAULT_TITLE
+
+        if (conversionResults.length > 1) {
+            rootMenuItemText += ` (${conversionResults.length - 1} more)`
+        }
+
         chrome.contextMenus.create({
             id: MENU_ITEM_ID_ROOT,
-            title: conversionResults[0]
-                ? conversionResults[0].title
-                : MENU_ITEM_ROOT_DEFAULT_TITLE,
+            title: rootMenuItemText,
             contexts: CONTEXTS,
             visible: !!conversionResults[0],
         })
