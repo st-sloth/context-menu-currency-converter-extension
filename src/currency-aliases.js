@@ -46,6 +46,7 @@ for (const currencyCode in currencyData) {
 
 
 // Custom aliases
+addAlias('¥', 'CNY')
 addAlias('zl', 'PLN')
 addAlias('руб', 'RUB')
 
