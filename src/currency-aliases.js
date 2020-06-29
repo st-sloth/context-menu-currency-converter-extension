@@ -49,6 +49,7 @@ for (const currencyCode in currencyData) {
 addAlias('¥', 'CNY')
 addAlias('zl', 'PLN')
 addAlias('руб', 'RUB')
+addAlias('грн', 'UAH')
 
 
 // TODO handle different letter cases

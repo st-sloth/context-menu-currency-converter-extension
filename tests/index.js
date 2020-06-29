@@ -79,8 +79,8 @@ test('Currency codes by aliases', (t) => {
 
     // Custom aliases
     t.deepEqual(
-        getCurrencyCodes(['¥', 'zl', 'руб'], preparedCurrencyRates),
-        ['JPY', 'CNY', 'PLN', 'RUB'],
+        getCurrencyCodes(['¥', 'zl', 'руб', 'грн'], preparedCurrencyRates),
+        ['JPY', 'CNY', 'PLN', 'RUB', 'UAH'],
     )
 
     // Preferred aliases codes
